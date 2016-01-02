@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title></title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+        <link href="css/simple-sidebar.css" rel="stylesheet">
+        <script src="js/function.js"></script>
+        <script src="js/jquery-1.11.2.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+        <script src="js/map.js"></script>
+        <script src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false"></script>
+        <style>
+            * {
+    border-radius: 0!important
+}
+.left {
+  float: left;
+  margin-left: 13px
+}
+.glyphicon-search {
+	color: #fff
+}
+.mobile_search {
+	margin: 6px 0 5px 0;
+}
+        </style>
+    </head>
+    <body>
+        <nav class="navbar navbar-inverse">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle collapsed left" data-toggle="collapse" data-target="#menu">
+                <span class="sr-only">Trình đơn</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              <a class="navbar-brand" href="#">Trang chủ</a>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#search">
+             <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="collapse navbar-collapse" id="menu">
+              <ul class="nav navbar-nav">
+                <li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
+                <li><a href="#">Link</a></li>
+                <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Menu <span class="caret"></span></a>
+                  <ul class="dropdown-menu" role="menu">
+                    <li><a href="#">Link</a></li>
+                    <li><a href="#">Link khác</a></li>
+                    <li><a href="#">Cái gì đó</a></li>
+                    <li class="divider"></li>
+                    <li><a href="#">khác</a></li>
+                    <li class="divider"></li>
+                    <li><a href="#">Chắc một cái gì đó sẽ nằm ở đây thôi :))</a></li>
+                  </ul>
+                </li>   
+              </ul> 
+            </div>
+
+            <div class="collapse navbar-collapse hidden-lg" id="search">
+              <form class="mobile_search hidden-sm hidden-md hidden-lg" role="search" action="/" method="GET">
+              <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Tìm kiếm..."/>
+                  <span class="input-group-btn">
+                    <button class="btn btn-primary" type="button">Tìm kiếm</button>
+                  </span>
+              </div>
+              </form>
+            </div>
+
+          </div>
+        </nav>
+    </body>
+</html>

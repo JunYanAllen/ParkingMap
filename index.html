@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Parking Map</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="css/mapstyle.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+        <link href="css/sidebar.css" rel="stylesheet">
+        <script src="js/function.js"></script>
+        <script src="js/jquery-1.11.2.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+        <script src="js/map.js"></script>
+        <script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+        <script src="d3imge.js"></script>
+        <script src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false"></script>
+        <script>
+            var infowindow = new google.maps.InfoWindow();
+            function initialize() {
+                //設定
+                var x, y, pos, bak_empty;
+                var directionsService = new google.maps.DirectionsService;
+                var directionsDisplay = new google.maps.DirectionsRenderer;
+                var geocoder = new google.maps.Geocoder();
+                var police_markers = [], fire_markers = [], dynamic_parking = [], dynamic_parking_text = [], static_parking = [], static_parking_text = [], all_Markers = [];
+                var LocateMarkers;
+                //設定地圖資訊
+                var mapOptions = {
+                    zoom: 14,
+                    mapTypeControl: false,
+                    zoomControl: true,
+                    zoomControlOptions: {
+                        style: google.maps.ZoomControlStyle.SMALL,
+                        position: google.maps.ControlPosition.LEFT_TOP
+                    },
+                    scaleControl: true,
+                    //streetViewControl: true,
+                    streetViewControlOptions: {
+                        position: google.maps.ControlPosition.LEFT_TOP
+                    }
+                };
+                var markerCircle = new google.maps.Circle({
+                    strokeColor: "#0000FF", //線的顏色
+                    strokeOpacity: 0.8,     //線的透明度
+                    strokeWeight: 2,        //線的寬度
+                    fillColor: "#FFFFFF",   //圓圈的顏色
+                    fillOpacity: 0.1        //圓圈的透明度
+                });
+                //建立地圖
+                var map = new google.maps.Map(document.getElementById('map'), mapOptions);
+                // 定位所在位址
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function (position) {
+                        pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                        x = position.coords.latitude;
+                        y = position.coords.longitude;
+                        //標記定位的位子
+                        LocateMarkers = new google.maps.Marker({
+                            position: pos,
+                            icon: { url: '/img/big.png'/*'/~chang/parkmap//img/big.png'*/, scaledSize: new google.maps.Size(30, 30) },
+                            animation: google.maps.Animation.DROP
+                        });
+                        map.setCenter(pos);
+                    });
+                };
+
+
+                $.ajaxSettings.async = false;
+                $.getJSON("police_json.js", function (data) { //引入警察局資料
+                    for (var i = 0; i < data.length; i++) {
+                        //建立座標
+                        var marker = new google.maps.Marker({
+                            position: new google.maps.LatLng(data[i]['lat'], data[i]['lng']),
+                            text: "<h2>" + data[i]['name'] + "</h2>雙擊兩下規劃路線",
+                            titletext: data[i]['name'],
+                            icon: { url: '/img/POLICE-01.png'/*'/~chang/parkmap/img/POLICE-01.png'*/, scaledSize: new google.maps.Size(30, 30) }
+                        });
+                        police_markers.push(marker);
+                        all_Markers.push(marker);
+                        marker.addListener('dblclick', function () {
+                            bak_empty = $("#sidebar-wrapper-right").html();
+                            $("#sidebar-wrapper-right").empty();
+                            directionsDisplay.setMap(map);
+                            directionsDisplay.setPanel(document.getElementById('sidebar-wrapper-right'));
+                            directionsService.route({
+                                origin: LocateMarkers.getPosition(),
+                                destination: this.getPosition(),
+                                travelMode: google.maps.TravelMode.DRIVING
+                            }, function (response, status) {
+                                if (status === google.maps.DirectionsStatus.OK) {
+                                    directionsDisplay.setDirections(response);
+                                } else {
+                                    window.alert('Directions request failed due to ' + status);
+                                }
+                            });
+                        });
+                        marker.addListener('click', function () {
+                            ShowInfo(this, this.text, map);
+                        });
+                    }
+                });
+
+                $.getJSON("Fire_data.js", function (data) { //引入消防局資料
+                    for (var i = 0; i < data.result.results.length; i++) {
+                        //建立座標
+                        var marker = new google.maps.Marker({
+                            position: twd97_to_latlng(data.result.results[i]["TWD97_X"], data.result.results[i]["TWD97_Y"]),
+                            text: "<h2>" + data.result.results[i]['name'] + "</h2>雙擊兩下規劃路線",
+                            titletext: data.result.results[i]['name'],
+                            icon: { url: '/img/消防局-01.png'/*'/~chang/parkmap/img/消防局-01.png'*/, scaledSize: new google.maps.Size(30, 30) }
+                        });
+                        fire_markers.push(marker);
+                        all_Markers.push(marker);
+                        marker.addListener('dblclick', function () {
+                            bak_empty = $("#sidebar-wrapper-right").html();
+                            $("#sidebar-wrapper-right").empty();
+                            directionsDisplay.setMap(map);
+                            directionsDisplay.setPanel(document.getElementById('sidebar-wrapper-right'));
+                            directionsService.route({
+                                origin: LocateMarkers.getPosition(),
+                                destination: this.getPosition(),
+                                travelMode: google.maps.TravelMode.DRIVING
+                            }, function (response, status) {
+                                if (status === google.maps.DirectionsStatus.OK) {
+                                    directionsDisplay.setDirections(response);
+                                } else {
+                                    window.alert('Directions request failed due to ' + status);
+                                }
+                            });
+                        });
+                        marker.addListener('click', function () {
+                            ShowInfo(this, this.text, map);
+                        });
+                    }
+                })
+
+                $.getJSON("park_info_data.js", function (data) {
+                    for (var i = 0; i < data.result.results.length; i++) {
+                        switch (data.result.results[i]["type"]) {
+                            case "1":
+                                var marker = new google.maps.Marker({
+                                    titletext: data.result.results[i]["name"],
+                                    totalcar: data.result.results[i]["totalCar"],
+                                    availableCar: "",
+                                    position: twd97_to_latlng(data.result.results[i]["tw97x"], data.result.results[i]["tw97y"]),
+                                    icon: { url: '/img/CAR-2-01.png'/*'/~chang/parkmap/img/CAR-2-01.png'*/, scaledSize: new google.maps.Size(30, 30) }
+                                });
+                                dynamic_parking.push(marker);
+                                all_Markers.push(marker);
+                                dynamic_parking_text.push("<h3>" + data.result.results[i]["name"] + "</h3>");
+                                marker.addListener('dblclick', function () {
+                                    bak_empty = $("#sidebar-wrapper-right").html();
+                                    $("#sidebar-wrapper-right").empty();
+                                    directionsDisplay.setMap(map);
+                                    directionsDisplay.setPanel(document.getElementById('sidebar-wrapper-right'));
+                                    directionsService.route({
+                                        origin: LocateMarkers.getPosition(),
+                                        destination: this.getPosition(),
+                                        travelMode: google.maps.TravelMode.DRIVING
+                                    }, function (response, status) {
+                                        if (status === google.maps.DirectionsStatus.OK) {
+                                            directionsDisplay.setDirections(response);
+                                        } else {
+                                            window.alert('Directions request failed due to ' + status);
+                                        }
+                                    });
+                                });
+                                break;
+                            case "2":
+                                var marker = new google.maps.Marker({
+                                    titletext: data.result.results[i]["name"],
+                                    totalcar: data.result.results[i]["totalCar"],
+                                    text: "<h3>" + data.result.results[i]["name"] + "</h3><br>雙擊兩下規劃路線",
+                                    position: twd97_to_latlng(data.result.results[i]["tw97x"], data.result.results[i]["tw97y"]),
+                                    icon: { url: '/img/CAR-01.png'/*'/~chang/parkmap/img/CAR-01.png'*/, scaledSize: new google.maps.Size(30, 30) }
+                                });
+                                all_Markers.push(marker);
+                                static_parking.push(marker);
+                                marker.addListener('click', function () {
+                                    ShowInfo(this, this.text, map);
+                                });
+                                marker.addListener('dblclick', function () {
+                                    bak_empty = $("#sidebar-wrapper-right").html();
+                                    $("#sidebar-wrapper-right").empty();
+                                    directionsDisplay.setMap(map);
+                                    directionsDisplay.setPanel(document.getElementById('sidebar-wrapper-right'));
+                                    directionsService.route({
+                                        origin: LocateMarkers.getPosition(),
+                                        destination: this.getPosition(),
+                                        travelMode: google.maps.TravelMode.DRIVING
+                                    }, function (response, status) {
+                                        if (status === google.maps.DirectionsStatus.OK) {
+                                            directionsDisplay.setDirections(response);
+                                        } else {
+                                            window.alert('Directions request failed due to ' + status);
+                                        }
+                                    });
+                                });
+
+                                break;
+                        }
+                    }
+                });
+
+                $.getJSON("park_available.js", function (data) {
+                    for (var i = 0; i < dynamic_parking.length; i++) {
+                        switch (data.result.results[i]["availableCar"]) {
+                            case "-9":
+                                dynamic_parking[i].availableCar = "<b>目前無資訊</b>";
+                                dynamic_parking[i].text = dynamic_parking_text[i] + "<br>剩餘汽車車位:<b>目前無資訊</b><br>雙擊兩下規劃路線";
+                                dynamic_parking[i].addListener('click', function () {
+                                    ShowInfo(this, this.text, map);
+                                });
+                                break;
+                            case "0":
+                                dynamic_parking[i].availableCar = "<b>無車位</b>";
+                                dynamic_parking[i].text = dynamic_parking_text[i] + "<br>剩餘汽車車位:<b>無車位</b><br>雙擊兩下規劃路線";
+                                dynamic_parking[i].addListener('click', function () {
+                                    ShowInfo(this, this.text, map);
+                                });
+                                break;
+                            default:
+                                dynamic_parking[i].availableCar = "<b>" + data.result.results[i]["availableCar"] + "</b>";
+                                dynamic_parking[i].text = dynamic_parking_text[i] + "<br>剩餘汽車車位:" + data.result.results[i]["availableCar"] + "<br>雙擊兩下規劃路線";
+                                dynamic_parking[i].addListener('click', function () {
+                                    ShowInfo(this, this.text, map);
+                                });
+                        }
+                    }
+                });
+                map.addListener('click', function (event) {
+                    $("#wrapper").addClass("active");
+                    $("#sidebar-wrapper-right").empty();
+                    $("#sidebar-wrapper-right").css({ "right": "250px", "width": "250px" });
+                    $('#sel').prop("disabled", false);
+                    directionsDisplay.setMap(null);
+                    directionsDisplay.setPanel(null);
+                    showMarkses(all_Markers, null);
+                    LocateMarkers.setMap(map);
+                    LocateMarkers.setPosition(event.latLng);
+                    LocateMarkers.setAnimation(google.maps.Animation.DROP);
+                    markerCircle.setCenter(event.latLng);
+                    $("#panel-list").remove("a");
+                    var d = 0.0;
+                    $('select').change(function () {
+                        $(".list-group-item").remove();
+                        markerCircle.setMap(map);
+                        $('select option:selected').each(function () {
+                            switch ($(this).val()) {
+                                case "400":
+                                    map.setZoom(17);
+                                    map.panTo(event.latLng);
+                                    break;
+                                case "600":
+                                    map.setZoom(16);
+                                    map.panTo(event.latLng);
+                                    break;
+                                case "800":
+                                    map.setZoom(16);
+                                    map.panTo(event.latLng);
+                                    break;
+                                case "1000":
+                                    map.setZoom(16);
+                                    map.panTo(event.latLng);
+                                    break;
+                                case "2000":
+                                    map.setZoom(15);
+                                    map.panTo(event.latLng);
+                                    break;
+                                case "3000":
+                                    map.setZoom(14);
+                                    map.panTo(event.latLng);
+                                    break;
+                            }
+                            var val = parseFloat($(this).val());
+                            markerCircle.setRadius(val);
+                            d = val / 1000;
+                            for (var i = 0; i < all_Markers.length; i++) {
+                                if (dis(event.latLng.lat(), event.latLng.lng(), all_Markers[i].getPosition().lat(), all_Markers[i].getPosition().lng()) < d) {
+                                    all_Markers[i].setMap(map);
+                                    var text = "<a href='#' class='list-group-item' onclick='ShowInfo(all_Markers["+i+"],all_Markers["+i+"].text,map)'><h4 class='list-group-item-heading'>" + all_Markers[i].titletext + "</h4><p class='list-group-item-text'>距離您的位子: " + dis(pos.lat(), pos.lng(), all_Markers[i].getPosition().lat(), all_Markers[i].getPosition().lng()) + "公里</p></a>";
+                                    $("#sidebar-wrapper-right").append(text);
+                                }
+                                else {
+                                    all_Markers[i].setMap(null);
+                                }
+                            }
+                        });
+                    }).change();
+
+                });
+                $('#value').keydown(function (e) {
+                    var key = e.which;
+                    if (key == 13) {
+                        $('#sel').prop("disabled", false);
+                        $("#wrapper").addClass("active");
+                        $("#sidebar-wrapper-right").css({ "right": "250px", "width": "250px" });
+                        var address = $('#value').val();
+                        geocoder.geocode({ 'address': address }, function (results, status) {
+                            if (status === google.maps.GeocoderStatus.OK) {
+                                map.setCenter(results[0].geometry.location);
+                                LocateMarkers.setMap(map);
+                                LocateMarkers.setPosition(results[0].geometry.location);
+                                markerCircle.setMap(map);
+                                markerCircle.setCenter(results[0].geometry.location);
+                                $("#panel-list").remove("a");
+                                var d = 0.0;
+                                $('select').change(function () {
+                                    $("#wrapper").addClass("active");
+                                    $(".list-group-item").remove();
+                                    $('select option:selected').each(function () {
+                                        switch ($(this).val()) {
+                                            case "400":
+                                                map.setZoom(17);
+                                                map.panTo(results[0].geometry.location);
+                                                break;
+                                            case "600":
+                                                map.setZoom(16);
+                                                map.panTo(results[0].geometry.location);
+                                                break;
+                                            case "800":
+                                                map.setZoom(16);
+                                                map.panTo(results[0].geometry.location);
+                                                break;
+                                            case "1000":
+                                                map.setZoom(16);
+                                                map.panTo(results[0].geometry.location);
+                                                break;
+                                            case "2000":
+                                                map.setZoom(15);
+                                                map.panTo(results[0].geometry.location);
+                                                break;
+                                            case "3000":
+                                                map.setZoom(14);
+                                                map.panTo(results[0].geometry.location);
+                                                break;
+                                        }
+                                        var val = parseFloat($(this).val());
+                                        markerCircle.setRadius(val);
+                                        d = val / 1000;
+                                        for (var i = 0; i < all_Markers.length; i++) {
+                                            if (dis(results[0].geometry.location.lat(), results[0].geometry.location.lng(), all_Markers[i].getPosition().lat(), all_Markers[i].getPosition().lng()) < d) {
+                                                all_Markers[i].setMap(map);
+                                                var text = "<a href='#' class='list-group-item'><h4 class='list-group-item-heading'>" + all_Markers[i].titletext + "</h4><p class='list-group-item-text'>距離您的位子: " + dis(pos.lat(), pos.lng(), all_Markers[i].getPosition().lat(), all_Markers[i].getPosition().lng()) + "公里</p></a>";
+                                                $("#sidebar-wrapper-right").append(text);
+                                            }
+                                            else {
+                                                all_Markers[i].setMap(null);
+                                            }
+                                        }
+                                    });
+                                }).change();
+                            } else {
+                                alert('Geocode was not successful for the following reason: ' + status);
+                            }
+                        });
+                    }
+
+                });
+
+                $('#restTravel').click(function () {
+                    directionsDisplay.setMap(null);
+                    directionsDisplay.setPanel(null);
+                    $("#sidebar-wrapper-right").html(bak_empty);
+                });
+                $('#restRange').click(function () {
+                    markerCircle.setMap(null);
+                    showMarkses(all_Markers, null);
+                    $('select').prop('selectedIndex', 0);
+                    $("#sidebar-wrapper-right").empty();
+                })
+                $('#restLocate').click(function () {
+                    directionsDisplay.setMap(null);
+                    LocateMarkers.setMap(null);
+                    markerCircle.setMap(null);
+                    showMarkses(all_Markers, null);
+                    $('select').prop('selectedIndex', 0);
+                    $("#sidebar-wrapper-right").empty();
+                    $('#sel').prop("disabled", true);
+                    $("#wrapper").removeClass("active");
+                    $("#sidebar-wrapper-right").css({ "right": "0px", "width": "0px" });
+                })
+                $("#locate").click(function () {
+                    LocateMarkers.setPosition(pos);
+                    LocateMarkers.setMap(map);
+                    markerCircle.setMap(map);
+                    markerCircle.setCenter(LocateMarkers.getPosition());
+                    map.setZoom(15);
+                    $("#wrapper").addClass("active");
+                    $("#sidebar-wrapper-right").css({ "right": "250px", "width": "250px" });
+                    $("#wrapper").addClass("active");
+                    $('#sel').prop("disabled", false);
+                    $('select').change(function () {
+                        $(".list-group-item").remove();
+                        $('select option:selected').each(function () {
+                            switch ($(this).val()) {
+                                case "400":
+                                    map.setZoom(17);
+                                    map.panTo(LocateMarkers.getPosition());
+                                    break;
+                                case "600":
+                                    map.setZoom(16);
+                                    map.panTo(LocateMarkers.getPosition());
+                                    break;
+                                case "800":
+                                    map.setZoom(16);
+                                    map.panTo(LocateMarkers.getPosition());
+                                    break;
+                                case "1000":
+                                    map.setZoom(15);
+                                    map.panTo(LocateMarkers.getPosition());
+                                    break;
+                                case "2000":
+                                    map.setZoom(14);
+                                    map.panTo(LocateMarkers.getPosition());
+                                    break;
+                                case "3000":
+                                    map.setZoom(14);
+                                    map.panTo(LocateMarkers.getPosition());
+                                    break;
+                            }
+                            var val = parseFloat($(this).val());
+                            markerCircle.setRadius(val);
+                            d = val / 1000;
+                            for (var i = 0; i < all_Markers.length; i++) {
+                                if (dis(pos.lat(), pos.lng(), all_Markers[i].getPosition().lat(), all_Markers[i].getPosition().lng()) < d) {
+                                    all_Markers[i].setMap(map);
+                                    var text = "<a href='#' class='list-group-item'><h4 class='list-group-item-heading'>" + all_Markers[i].titletext + "</h4><p class='group-item-text'>距離您的位子: " + dis(pos.lat(), pos.lng(), all_Markers[i].getPosition().lat(), all_Markers[i].getPosition().lng()) + "公里</p></a>";
+                                    $("#sidebar-wrapper-right").append(text);
+                                }
+                                else {
+                                    all_Markers[i].setMap(null);
+                                }
+                            }
+                        });
+                    }).change();
+                    map.panTo(LocateMarkers.getPosition());
+                });
+                //changMap(map, police_markers, 16, 16);
+                //changMap(map, static_parking, 15, 15);
+                //changMap(map, fire_markers, 16, 16);
+            };
+            google.maps.event.addDomListener(window, 'load', initialize);
+        </script>
+        </script>
+        
+    </head>
+    <body>   
+        <div id="wrapper" class="fill">
+
+
+            <div id="sidebar-wrapper">
+                <ul class="sidebar-nav">
+                    <li class="sidebar-brand">
+                        <a href="#">
+                            Parking MAP
+                        </a>
+                    </li>
+                    <li>
+                        <label>輸入想查尋的地方</label>
+                        <input type="text" class="form-control" placeholder="Search for address..." id="value">
+                        
+                    </li>
+                    <li>
+                        <form class="form-group">
+                            <label for="sel">選擇範圍(單位公尺/m):</label>
+                            <select class="form-control" id="sel" disabled>
+                                <option>距離</option>
+                                <option>400</option>
+                                <option>600</option>
+                                <option>800</option>
+                                <option>1000</option>
+                                <option>2000</option>
+                                <option>3000</option>
+                            </select>
+                        </form>
+                    </li>
+                    <li>
+                        <a href="#" id="locate">所在位子</a>
+                    </li>
+                    <li>
+                        <a href="javascript:;" data-toggle="collapse" data-target="#demo1"><i class="fa fa-fw fa-bar-chart-o"></i>重新設定 <i class="fa fa-fw fa-caret-down"></i></a>
+                        <ul id="demo1" class="collapse">
+                            <li>
+                                <a href="#" id="restTravel">重設路線</a>
+                            </li>
+                            <li>
+                                <a href="#" id="restRange">重設範圍</a>
+                            </li>
+                            <li>
+                                <a href="#" id="restLocate">重設位子</a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                </ul>
+            </div>  
+
+                <div class="col-sm-12" id="map"></div>
+                <div id="sidebar-wrapper-right">
+                        <ul class="sidebar-nav">
+                            <li id="list">
+                            </li>
+                        </ul>
+                 </div>
+                <div class="col-md-12" id="imge">
+                </div>
+ 
+            <!--<div class="map" id="map"></div>-->
+        </div>
+
+    </body>
+</html>
